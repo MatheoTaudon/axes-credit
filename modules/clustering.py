@@ -120,9 +120,9 @@ def show(df):
                 fig_spread.add_annotation(x=val, y=-0.3, text=label, showarrow=False,
                                           font=dict(color="orange"), yanchor="top")
     
-            # Points des dealers (couleurs différentes)
+            # Points des dealers 
             unique_dealers = df_all["Dealer"].dropna().unique()
-            color_map = px.colors.qualitative.Safe  # Palette visible mode clair et sombre
+            color_map = px.colors.qualitative.Safe  
             dealer_colors = {dealer: color_map[i % len(color_map)] for i, dealer in enumerate(unique_dealers)}
     
             for _, row in df_all.iterrows():
@@ -146,7 +146,6 @@ def show(df):
             )
     
             st.plotly_chart(fig_spread, use_container_width=True)
-
 
 
 
