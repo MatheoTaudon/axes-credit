@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from datetime import datetime
 
 # Fonction de classification des maturités
 def maturity_bucket(maturity_date):
@@ -38,7 +39,7 @@ def maturity_bucket(maturity_date):
 
 def show(df):
     st.button("⬅️ Retour à l'accueil", on_click=lambda: st.session_state.update(page="accueil"))
-    st.markdown("<h2 style='text-align:center; color:orange;'>Spreads & Flux – Analyse Marché Crédit</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='text-align:center; color:orange;'>Flux du {datetime.now().strftime('%d/%m/%Y')}</h2>", unsafe_allow_html=True)
 
     # Préparation des données
     df = df.copy()
@@ -114,7 +115,6 @@ def show(df):
         color_discrete_sequence=["#1f77b4"]
     )
     st.plotly_chart(fig_flux, use_container_width=True)
-
 
 
 
