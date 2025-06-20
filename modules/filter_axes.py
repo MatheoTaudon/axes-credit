@@ -5,13 +5,6 @@ import plotly.graph_objects as go
 from io import BytesIO
 import datetime
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from io import BytesIO
-import datetime
-
 def show(df):
     st.button("⬅️ Retour à l'accueil", on_click=lambda: st.session_state.update(page="accueil"))
     st.markdown("<h2 style='text-align:center; color:orange;'>Filtrer les Axes Crédit</h2>", unsafe_allow_html=True)
@@ -24,33 +17,37 @@ def show(df):
 
     with col1:
         # Sector
-        sector_options = ["Tous"] + sorted(df["Sector"].dropna().unique())
-        sector_filter = st.multiselect("Sector", sector_options, default=["Tous"])
-        if "Tous" in sector_filter and len(sector_filter) > 1:
-            sector_filter.remove("Tous")
-        selected_sectors = df["Sector"].dropna().unique() if "Tous" in sector_filter else sector_filter
+        all_sectors = sorted(df["Sector"].dropna().unique())
+        select_all_sectors = st.checkbox("Tous les secteurs", value=True)
+        if select_all_sectors:
+            selected_sectors = all_sectors
+        else:
+            selected_sectors = st.multiselect("Sector", all_sectors)
 
         # Currency
-        currency_options = ["Tous"] + sorted(df["Currency"].dropna().unique())
-        currency_filter = st.multiselect("Currency", currency_options, default=["Tous"])
-        if "Tous" in currency_filter and len(currency_filter) > 1:
-            currency_filter.remove("Tous")
-        selected_currencies = df["Currency"].dropna().unique() if "Tous" in currency_filter else currency_filter
+        all_currencies = sorted(df["Currency"].dropna().unique())
+        select_all_currencies = st.checkbox("Toutes les devises", value=True)
+        if select_all_currencies:
+            selected_currencies = all_currencies
+        else:
+            selected_currencies = st.multiselect("Currency", all_currencies)
 
         # Coupon Type
-        coupon_options = ["Tous"] + sorted(df["CouponType"].dropna().unique())
-        coupon_filter = st.multiselect("Coupon Type", coupon_options, default=["Tous"])
-        if "Tous" in coupon_filter and len(coupon_filter) > 1:
-            coupon_filter.remove("Tous")
-        selected_coupons = df["CouponType"].dropna().unique() if "Tous" in coupon_filter else coupon_filter
+        all_coupons = sorted(df["CouponType"].dropna().unique())
+        select_all_coupons = st.checkbox("Tous les types de coupon", value=True)
+        if select_all_coupons:
+            selected_coupons = all_coupons
+        else:
+            selected_coupons = st.multiselect("Coupon Type", all_coupons)
 
         # Rating Category
-        rating_options = ["Tous"] + sorted(df["Rating_Category"].dropna().unique())
-        rating_filter = st.multiselect("Rating Category", rating_options, default=["Tous"])
-        if "Tous" in rating_filter and len(rating_filter) > 1:
-            rating_filter.remove("Tous")
-        selected_ratings = df["Rating_Category"].dropna().unique() if "Tous" in rating_filter else rating_filter
-        
+        all_ratings = sorted(df["Rating_Category"].dropna().unique())
+        select_all_ratings = st.checkbox("Toutes les notations", value=True)
+        if select_all_ratings:
+            selected_ratings = all_ratings
+        else:
+            selected_ratings = st.multiselect("Rating Category", all_ratings)
+            
         issuers = sorted(df["IssuerName"].dropna().unique())
         issuer_selected = st.selectbox("Filtrer par émetteur (IssuerName)", [""] + issuers)
 
@@ -58,15 +55,8 @@ def show(df):
         yld_range = st.slider(
             "Yield (%)",
             min_value=0.0,
-            max_value=100.0,
+            max_value=50.0,
             value=(float(df["AXE_Offer_YLD"].min()), float(df["AXE_Offer_YLD"].max()))
-        )
-
-        price_range = st.slider(
-            "Prix",
-            min_value=0.0,
-            max_value=200.0,
-            value=(float(df["AXE_Offer_Price"].min()), float(df["AXE_Offer_Price"].max()))
         )
 
         bmk_spd_range = st.slider(
@@ -81,13 +71,16 @@ def show(df):
 
     with col3:
         nb_dealer_range = st.slider("Nb dealers axe", 1, int(df["Nb_Dealers_AXE"].max()), (1, int(df["Nb_Dealers_AXE"].max())))
-        axe_spread_range = st.slider("Axe vs Mid", float(df["Axe_Mid_Spread"].min()), float(df["Axe_Mid_Spread"].max()), (float(df["Axe_Mid_Spread"].min()), float(df["Axe_Mid_Spread"].max())))
-        exclude_144a = st.checkbox("Exclure les titres 144A")
-        show_scraps = st.checkbox("Afficher uniquement les Scraps (quantité ne finissant pas par 0)")
         filter_composite = st.checkbox("Filtrer autour de la fourchette composite (Bid/Offer)")
         tol = None
         if filter_composite:
-            tol = st.slider("Marge autour du Bid/Offer (± bps)", min_value=0.0, max_value=5.0, value=0.05, step=0.01)
+            tol = st.slider("Marge autour du Bid/Offer (± points)", min_value=0.0, max_value=5.0, value=0.05, step=0.01)
+            axe_spread_range = st.slider("Axe vs Mid", float(df["Axe_Mid_Spread"].min()), float(df["Axe_Mid_Spread"].max()), (float(df["Axe_Mid_Spread"].min()), float(df["Axe_Mid_Spread"].max())))
+        else:
+            axe_spread_range = (float(df["Axe_Mid_Spread"].min()), float(df["Axe_Mid_Spread"].max()))
+
+        exclude_144a = st.checkbox("Exclure les titres 144A")
+        show_scraps = st.checkbox("Afficher uniquement les Scraps (quantité ne finissant pas par 0)")
 
 
     streamlit_min = datetime.date(1970, 1, 1)
@@ -114,13 +107,11 @@ def show(df):
 
     filtered_df = filtered_df[
         (filtered_df["AXE_Offer_YLD"] >= yld_range[0]) & (filtered_df["AXE_Offer_YLD"] <= yld_range[1]) &
-        (filtered_df["AXE_Offer_Price"] >= price_range[0]) & (filtered_df["AXE_Offer_Price"] <= price_range[1]) &
         (filtered_df["AXE_Offer_QTY"] >= qty_min) & (filtered_df["AXE_Offer_QTY"] <= qty_max) &
         (filtered_df["Nb_Dealers_AXE"] >= nb_dealer_range[0]) & (filtered_df["Nb_Dealers_AXE"] <= nb_dealer_range[1]) &
         (filtered_df["Axe_Mid_Spread"] >= axe_spread_range[0]) & (filtered_df["Axe_Mid_Spread"] <= axe_spread_range[1]) &
         (filtered_df["AXE_Offer_BMK_SPD"] >= bmk_spd_range[0]) & (filtered_df["AXE_Offer_BMK_SPD"] <= bmk_spd_range[1])
     ]
-
 
     if maturity_min and maturity_max:
         maturity_min_dt = pd.to_datetime(maturity_min)
@@ -134,7 +125,7 @@ def show(df):
         filtered_df = filtered_df[filtered_df["Maturity"] <= pd.to_datetime(maturity_max)]
 
     if exclude_144a:
-        filtered_df = filtered_df[~filtered_df["Bond ID"].astype(str).str.contains(r"\{144A\}", regex=True)]
+        filtered_df = filtered_df[~filtered_df["Bond ID"].astype(str).str.contains("144A", regex=False)]
 
     if show_scraps:
         filtered_df = filtered_df[~filtered_df["AXE_Offer_QTY"].astype(str).str.endswith("0")]
@@ -243,7 +234,6 @@ def show(df):
         fig2.update_layout(height=250, template="plotly_dark", showlegend=False,
                            xaxis_title="Prix", xaxis=dict(showgrid=False), yaxis=dict(visible=False))
         st.plotly_chart(fig2, use_container_width=True)
-
 
 
 
